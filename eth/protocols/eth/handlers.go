@@ -20,14 +20,41 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/loggy"
+
+	//"/home/ubuntu/ethereum/go-ethereum/loggy" //How do I import loggy
+
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
 )
+
+type Tx struct {
+	Type                 string `json:"type"`
+	ChainId              string `json:"chainId"`
+	Nonce                string `json:"nonce"`
+	To                   string `json:"to"`
+	Gas                  string `json:"gas"`
+	GasPrice             string `json:"gasPrice"`
+	MaxPriorityFeePerGas string `json:"maxPriorityFeePerGas"`
+	MaxFeePerGas         string `json:"maxFeePerGas"`
+	Value                string `json:"value"`
+	Input                string `json:"input"`
+	V                    string `json:"v"`
+	R                    string `json:"r"`
+	S                    string `json:"s"`
+	Hash                 string `json:"hash"`
+}
+
+// Adding this for json Marshalling in TxLogging
+type Transaction struct {
+	TxHash common.Hash `json:"TxHash"`
+}
 
 func handleGetBlockHeaders(backend Backend, msg Decoder, peer *Peer) error {
 	// Decode the complex header query
@@ -35,6 +62,16 @@ func handleGetBlockHeaders(backend Backend, msg Decoder, peer *Peer) error {
 	if err := msg.Decode(&query); err != nil {
 		return fmt.Errorf("%w: message %v: %v", errDecode, msg, err)
 	}
+
+	//peerjson, _ := json.Marshal(peer.Info())
+	tmpjson, err := json.Marshal(query)
+
+	if err == nil {
+		//In below line check about msg.Time(), perhaps we can add a new parameter and pass msg.ReceivedAt from handler.go
+		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", tmpjson, msg.Time().String(), time.Now().String())
+		go loggy.Log(s, loggy.GetBlockHeadersMsg, loggy.Inbound)
+	}
+
 	response := ServiceGetBlockHeadersQuery(backend.Chain(), query.GetBlockHeadersRequest, peer)
 	return peer.ReplyBlockHeadersRLP(query.RequestId, response)
 }
@@ -208,6 +245,14 @@ func handleGetBlockBodies(backend Backend, msg Decoder, peer *Peer) error {
 	if err := msg.Decode(&query); err != nil {
 		return fmt.Errorf("%w: message %v: %v", errDecode, msg, err)
 	}
+
+	tmpjson, err := json.Marshal(query)
+	//peerjson, _ := json.Marshal(peer.Info())
+	if err == nil {
+		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", tmpjson, msg.Time(), time.Now().String())
+		go loggy.Log(s, loggy.GetBlockBodiesMsg, loggy.Inbound)
+	}
+
 	response := ServiceGetBlockBodiesQuery(backend.Chain(), query.GetBlockBodiesRequest)
 	return peer.ReplyBlockBodiesRLP(query.RequestId, response)
 }
@@ -239,6 +284,14 @@ func handleGetReceipts(backend Backend, msg Decoder, peer *Peer) error {
 	if err := msg.Decode(&query); err != nil {
 		return fmt.Errorf("%w: message %v: %v", errDecode, msg, err)
 	}
+
+	tmpjson, err := json.Marshal(query)
+	//peerjson, _ := json.Marshal(peer.Info())
+	if err == nil {
+		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", tmpjson, msg.Time(), time.Now().String())
+		go loggy.Log(s, loggy.GetReceiptsMsg, loggy.Inbound)
+	}
+
 	response := ServiceGetReceiptsQuery(backend.Chain(), query.GetReceiptsRequest)
 	return peer.ReplyReceiptsRLP(query.RequestId, response)
 }
@@ -288,6 +341,15 @@ func handleBlockHeaders(backend Backend, msg Decoder, peer *Peer) error {
 	if err := msg.Decode(res); err != nil {
 		return fmt.Errorf("%w: message %v: %v", errDecode, msg, err)
 	}
+
+	tmpjson, err := json.Marshal(res)
+	//peerjson, _ := json.Marshal(peer.Info())
+
+	if err == nil {
+		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", tmpjson, msg.Time().String(), time.Now().String())
+		go loggy.Log(s, loggy.BlockHeadersMsg, loggy.Inbound)
+	}
+
 	metadata := func() interface{} {
 		hashes := make([]common.Hash, len(res.BlockHeadersRequest))
 		for i, header := range res.BlockHeadersRequest {
@@ -308,6 +370,15 @@ func handleBlockBodies(backend Backend, msg Decoder, peer *Peer) error {
 	if err := msg.Decode(res); err != nil {
 		return fmt.Errorf("%w: message %v: %v", errDecode, msg, err)
 	}
+
+	tmpjson, err := json.Marshal(res)
+
+	//peerjson, _ := json.Marshal(peer.Info())
+	if err == nil {
+		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", tmpjson, msg.Time(), time.Now().String())
+		go loggy.Log(s, loggy.BlockBodiesMsg, loggy.Inbound)
+	}
+
 	metadata := func() interface{} {
 		var (
 			txsHashes        = make([]common.Hash, len(res.BlockBodiesResponse))
@@ -337,6 +408,14 @@ func handleReceipts(backend Backend, msg Decoder, peer *Peer) error {
 	if err := msg.Decode(res); err != nil {
 		return fmt.Errorf("%w: message %v: %v", errDecode, msg, err)
 	}
+
+	tmpjson, err := json.Marshal(res)
+	//peerjson, _ := json.Marshal(peer.Info())
+	if err == nil {
+		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", tmpjson, msg.Time(), time.Now().String())
+		go loggy.Log(s, loggy.ReceiptsMsg, loggy.Inbound)
+	}
+
 	metadata := func() interface{} {
 		hasher := trie.NewStackTrie(nil)
 		hashes := make([]common.Hash, len(res.ReceiptsResponse))
@@ -379,6 +458,14 @@ func handleGetPooledTransactions(backend Backend, msg Decoder, peer *Peer) error
 		return fmt.Errorf("%w: message %v: %v", errDecode, msg, err)
 	}
 	hashes, txs := answerGetPooledTransactions(backend, query.GetPooledTransactionsRequest)
+
+	tmpjson, err := json.Marshal(query)
+
+	if err == nil {
+		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", tmpjson, msg.Time(), time.Now().String())
+		go loggy.Log(s, loggy.GetPooledTransactionsMsg, loggy.Inbound)
+	}
+
 	return peer.ReplyPooledTransactionsRLP(query.RequestId, hashes, txs)
 }
 
@@ -417,6 +504,9 @@ func handleTransactions(backend Backend, msg Decoder, peer *Peer) error {
 	}
 	// Transactions can be processed, parse all of them and deliver to the pool
 	var txs TransactionsPacket
+	var slice []common.Hash
+	var transaction_slice []Transaction
+
 	if err := msg.Decode(&txs); err != nil {
 		return fmt.Errorf("%w: message %v: %v", errDecode, msg, err)
 	}
@@ -426,7 +516,23 @@ func handleTransactions(backend Backend, msg Decoder, peer *Peer) error {
 			return fmt.Errorf("%w: transaction %d is nil", errDecode, i)
 		}
 		peer.markTransaction(tx.Hash())
+		slice = append(slice, tx.Hash())
 	}
+
+	//_, err := json.Marshal(txs)
+	//peerjson, _ := json.Marshal(peer.Info())
+	for _, hash := range slice {
+		transaction_slice = append(transaction_slice, Transaction{TxHash: hash})
+	}
+
+	jsonData, err := json.Marshal(transaction_slice)
+	print(string(jsonData))
+
+	if err == nil {
+		s := fmt.Sprintf(" { \"TxHashes\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", string(jsonData), msg.Time(), time.Now().String())
+		go loggy.Log(s, loggy.TxMsg, loggy.Inbound)
+	}
+
 	return backend.Handle(peer, &txs)
 }
 
@@ -437,6 +543,9 @@ func handlePooledTransactions(backend Backend, msg Decoder, peer *Peer) error {
 	}
 	// Transactions can be processed, parse all of them and deliver to the pool
 	var txs PooledTransactionsPacket
+	var slice []common.Hash
+	var transaction_slice []Transaction
+
 	if err := msg.Decode(&txs); err != nil {
 		return fmt.Errorf("%w: message %v: %v", errDecode, msg, err)
 	}
@@ -445,9 +554,26 @@ func handlePooledTransactions(backend Backend, msg Decoder, peer *Peer) error {
 		if tx == nil {
 			return fmt.Errorf("%w: transaction %d is nil", errDecode, i)
 		}
+		//Testing here
+		//print(tx.Hash())
 		peer.markTransaction(tx.Hash())
+		slice = append(slice, tx.Hash())
 	}
+
 	requestTracker.Fulfil(peer.id, peer.version, PooledTransactionsMsg, txs.RequestId)
+
+	for _, hash := range slice {
+		transaction_slice = append(transaction_slice, Transaction{TxHash: hash})
+	}
+
+	jsonData, err := json.Marshal(transaction_slice)
+
+	//_, err := json.Marshal(txs)
+
+	if err == nil {
+		s := fmt.Sprintf(" { \"Hashes\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", string(jsonData), msg.Time(), time.Now().String())
+		go loggy.Log(s, loggy.PooledTransactionsMsg, loggy.Inbound)
+	}
 
 	return backend.Handle(peer, &txs.PooledTransactionsResponse)
 }

@@ -163,24 +163,25 @@ type Decoder interface {
 }
 
 var eth68 = map[uint64]msgHandler{
-	NewBlockHashesMsg:             handleNewBlockhashes,
-	NewBlockMsg:                   handleNewBlock,
-	TransactionsMsg:               handleTransactions,
+	NewBlockHashesMsg:             handleNewBlockhashes, //not implemented in original loggy
+	NewBlockMsg:                   handleNewBlock,       //not implemented in original loggy
+	TransactionsMsg:               handleTransactions,   //done
 	NewPooledTransactionHashesMsg: handleNewPooledTransactionHashes,
-	GetBlockHeadersMsg:            handleGetBlockHeaders,
-	BlockHeadersMsg:               handleBlockHeaders,
-	GetBlockBodiesMsg:             handleGetBlockBodies,
-	BlockBodiesMsg:                handleBlockBodies,
-	GetReceiptsMsg:                handleGetReceipts,
-	ReceiptsMsg:                   handleReceipts,
-	GetPooledTransactionsMsg:      handleGetPooledTransactions,
-	PooledTransactionsMsg:         handlePooledTransactions,
+	GetBlockHeadersMsg:            handleGetBlockHeaders,       //done
+	BlockHeadersMsg:               handleBlockHeaders,          //done
+	GetBlockBodiesMsg:             handleGetBlockBodies,        //done
+	BlockBodiesMsg:                handleBlockBodies,           //done
+	GetReceiptsMsg:                handleGetReceipts,           //done
+	ReceiptsMsg:                   handleReceipts,              //done
+	GetPooledTransactionsMsg:      handleGetPooledTransactions, //Added
+	PooledTransactionsMsg:         handlePooledTransactions,    //Added
 }
 
 // handleMessage is invoked whenever an inbound message is received from a remote
 // peer. The remote connection is torn down upon returning any error.
 func handleMessage(backend Backend, peer *Peer) error {
 	// Read the next message from the remote peer, and ensure it's fully consumed
+
 	msg, err := peer.rw.ReadMsg()
 	if err != nil {
 		return err

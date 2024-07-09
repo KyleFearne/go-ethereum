@@ -35,6 +35,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/loggy"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/p2p/netutil"
@@ -162,6 +163,8 @@ func (tab *Table) Nodes() []*enode.Node {
 	for _, b := range &tab.buckets {
 		for _, n := range b.entries {
 			nodes = append(nodes, unwrapNode(n))
+			//fmt.Print("ID: ", n.ID(), " IP: ", n.IP(), "\n")
+			//Uncomment this to print table
 		}
 	}
 	return nodes
@@ -543,6 +546,9 @@ func (tab *Table) addSeenNode(n *node) {
 	b.replacements = deleteNode(b.replacements, n)
 	n.addedAt = time.Now()
 
+	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"timestamp_logged\": \"%s\"}", "Seen Node Added", n.ID(), n.addedAt.String())
+	go loggy.Log(s, loggy.PeerTableLog, loggy.Inbound)
+
 	if tab.nodeAddedHook != nil {
 		tab.nodeAddedHook(b, n)
 	}
@@ -565,6 +571,11 @@ func (tab *Table) addVerifiedNode(n *node) {
 		return
 	}
 
+	//These lines will just print the entries in the peer table and len at the end.
+
+	// test := tab.Nodes()
+	// print(len(test))
+
 	tab.mutex.Lock()
 	defer tab.mutex.Unlock()
 	b := tab.bucket(n.ID())
@@ -586,6 +597,9 @@ func (tab *Table) addVerifiedNode(n *node) {
 	b.entries, _ = pushNode(b.entries, n, bucketSize)
 	b.replacements = deleteNode(b.replacements, n)
 	n.addedAt = time.Now()
+
+	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"timestamp_logged\": \"%s\"}", "Verified Node Added", n.ID(), n.addedAt.String())
+	go loggy.Log(s, loggy.PeerTableLog, loggy.Inbound)
 
 	if tab.nodeAddedHook != nil {
 		tab.nodeAddedHook(b, n)
@@ -638,8 +652,12 @@ func (tab *Table) addReplacement(b *bucket, n *node) {
 	}
 	var removed *node
 	b.replacements, removed = pushNode(b.replacements, n, maxReplacements)
+
 	if removed != nil {
+		// Is this part correct, should I log this earlier?
 		tab.removeIP(b, removed.IP())
+		// s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"Old Node Replaced\": \"%s\", \"timestamp_logged\": \"%s\"}", "Node Replaced", n.ID(), removed.ID(), time.Now().String())
+		// go loggy.Log(s, loggy.PeerTableLog, loggy.Inbound)
 	}
 }
 
@@ -659,6 +677,10 @@ func (tab *Table) replace(b *bucket, last *node) *node {
 	r := b.replacements[tab.rand.Intn(len(b.replacements))]
 	b.replacements = deleteNode(b.replacements, r)
 	b.entries[len(b.entries)-1] = r
+
+	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"timestamp_logged\": \"%s\"}", "Node Added (replacement)", r.ID(), time.Now().String())
+	go loggy.Log(s, loggy.PeerTableLog, loggy.Inbound)
+
 	tab.removeIP(b, last.IP())
 	return r
 }
@@ -694,6 +716,10 @@ func (tab *Table) deleteInBucket(b *bucket, n *node) {
 	}
 	b.entries = deleteNode(b.entries, n)
 	tab.removeIP(b, n.IP())
+
+	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"timestamp_logged\": \"%s\"}", "Node Deleted", n.ID(), time.Now().String())
+	go loggy.Log(s, loggy.PeerTableLog, loggy.Inbound)
+
 	if tab.nodeRemovedHook != nil {
 		tab.nodeRemovedHook(b, n)
 	}

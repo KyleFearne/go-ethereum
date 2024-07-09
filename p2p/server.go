@@ -34,6 +34,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/loggy"
 	"github.com/ethereum/go-ethereum/p2p/discover"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/p2p/enr"
@@ -768,14 +769,26 @@ running:
 				peers[c.node.ID()] = p
 				srv.log.Debug("Adding p2p peer", "peercount", len(peers), "id", p.ID(), "conn", c.flags, "addr", p.RemoteAddr(), "name", p.Name())
 				srv.dialsched.peerAdded(c)
+				t := loggy.Outbound
+
 				if p.Inbound() {
 					inboundCount++
 					serveSuccessMeter.Mark(1)
 					activeInboundPeerGauge.Inc(1)
+					t = loggy.Inbound
 				} else {
 					dialSuccessMeter.Mark(1)
 					activeOutboundPeerGauge.Inc(1)
 				}
+
+				new_text := "Outbound"
+
+				if t == loggy.Inbound {
+					new_text = "Inbound"
+				}
+
+				s := fmt.Sprintf("{\"Action\": \"Adding p2p peer\", \"peercount\": \"%d\", \"id\": \"%s\", \"conn\": \"%s\", \"address\": \"%s\", \"name\": \"%s\", \"direction\": \"%s\",\"time\": \"%s\"}", len(peers), p.ID(), c.flags, p.RemoteAddr(), p.Name(), new_text, time.Now().String())
+				go loggy.Log(s, loggy.AddPeer, t)
 				activePeerGauge.Inc(1)
 			}
 			c.cont <- err
@@ -786,12 +799,24 @@ running:
 			delete(peers, pd.ID())
 			srv.log.Debug("Removing p2p peer", "peercount", len(peers), "id", pd.ID(), "duration", d, "req", pd.requested, "err", pd.err)
 			srv.dialsched.peerRemoved(pd.rw)
+
+			t := loggy.Outbound
 			if pd.Inbound() {
 				inboundCount--
 				activeInboundPeerGauge.Dec(1)
+				t = loggy.Inbound
 			} else {
 				activeOutboundPeerGauge.Dec(1)
 			}
+
+			new_text := "Outbound"
+
+			if t == loggy.Inbound {
+				new_text = "Inbound"
+			}
+
+			s := fmt.Sprintf("{\"Action\":\"Removing p2p peer\", \"peercount\": \"%d\", \"id\": \"%s\", \"duration\": \"%s\", \"address\": \"%s\", \"direction\": \"%s\" , \"req\": \"%t\", \"err\": \"%s\", \"time\": \"%s\"}", len(peers), pd.ID(), d, pd.RemoteAddr(), new_text, pd.requested, pd.err, time.Now().String())
+			go loggy.Log(s, loggy.RemovePeer, t)
 			activePeerGauge.Dec(1)
 		}
 	}
