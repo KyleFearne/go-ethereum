@@ -56,6 +56,18 @@ type Transaction struct {
 	TxHash common.Hash `json:"TxHash"`
 }
 
+type Output struct {
+	RequestId        uint64        `json:"RequestId"`
+	TxHashes         []common.Hash `json:"TxHashes"`
+	UncleHashes      []common.Hash `json:"UncleHashes"`
+	WithdrawalHashes []common.Hash `json:"WithdrawalHashes"`
+}
+
+type ReceiptOutput struct {
+	RequestId uint64        `json:"RequestId"`
+	TxHashes  []common.Hash `json:"TxHashes"`
+}
+
 func handleGetBlockHeaders(backend Backend, msg Decoder, peer *Peer) error {
 	// Decode the complex header query
 	var query GetBlockHeadersPacket
@@ -371,13 +383,7 @@ func handleBlockBodies(backend Backend, msg Decoder, peer *Peer) error {
 		return fmt.Errorf("%w: message %v: %v", errDecode, msg, err)
 	}
 
-	tmpjson, err := json.Marshal(res)
-
-	//peerjson, _ := json.Marshal(peer.Info())
-	if err == nil {
-		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", tmpjson, msg.Time(), time.Now().String())
-		go loggy.Log(s, loggy.BlockBodiesMsg, loggy.Inbound)
-	}
+	//tmpjson, err := json.Marshal(res)
 
 	metadata := func() interface{} {
 		var (
@@ -395,6 +401,23 @@ func handleBlockBodies(backend Backend, msg Decoder, peer *Peer) error {
 		}
 		return [][]common.Hash{txsHashes, uncleHashes, withdrawalHashes}
 	}
+
+	hashes := metadata().([][]common.Hash)
+
+	output := Output{
+		RequestId:        res.RequestId,
+		TxHashes:         hashes[0],
+		UncleHashes:      hashes[1],
+		WithdrawalHashes: hashes[2],
+	}
+
+	jsonData, err := json.Marshal(output)
+
+	if err == nil {
+		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", string(jsonData), msg.Time(), time.Now().String())
+		go loggy.Log(s, loggy.BlockBodiesMsg, loggy.Inbound)
+	}
+
 	return peer.dispatchResponse(&Response{
 		id:   res.RequestId,
 		code: BlockBodiesMsg,
@@ -409,13 +432,6 @@ func handleReceipts(backend Backend, msg Decoder, peer *Peer) error {
 		return fmt.Errorf("%w: message %v: %v", errDecode, msg, err)
 	}
 
-	tmpjson, err := json.Marshal(res)
-	//peerjson, _ := json.Marshal(peer.Info())
-	if err == nil {
-		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", tmpjson, msg.Time(), time.Now().String())
-		go loggy.Log(s, loggy.ReceiptsMsg, loggy.Inbound)
-	}
-
 	metadata := func() interface{} {
 		hasher := trie.NewStackTrie(nil)
 		hashes := make([]common.Hash, len(res.ReceiptsResponse))
@@ -424,6 +440,21 @@ func handleReceipts(backend Backend, msg Decoder, peer *Peer) error {
 		}
 		return hashes
 	}
+
+	hashes := metadata().([]common.Hash)
+
+	output := ReceiptOutput{
+		RequestId: res.RequestId,
+		TxHashes:  hashes,
+	}
+
+	jsonData, err := json.Marshal(output)
+
+	if err == nil{
+		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", string(jsonData), msg.Time(), time.Now().String())
+		go loggy.Log(s, loggy.ReceiptsMsg, loggy.Inbound)
+	}
+
 	return peer.dispatchResponse(&Response{
 		id:   res.RequestId,
 		code: ReceiptsMsg,

@@ -231,8 +231,7 @@ func Log(jsonstr string, msgtype MessageType, msgdir MessageDirection) {
 
 	EPOCH_DURATION = 14400
 	// Change BASEPATH accordingly
-	LOGS_BASEPATH = "/root/ethereumlogs/"
-	
+	LOGS_BASEPATH = "/mnt/fscopy/home/ubuntu/ethereumlogs/"
 
 	fname := GET_LOG_FILE(msgtype, msgdir)
 
