@@ -546,7 +546,7 @@ func (tab *Table) addSeenNode(n *node) {
 	b.replacements = deleteNode(b.replacements, n)
 	n.addedAt = time.Now()
 
-	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"timestamp_logged\": \"%s\"}", "Seen Node Added", n.ID(), n.addedAt.String())
+	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"IP\": \"%s\", \"timestamp_logged\": \"%s\"}", "Seen Node Added", n.ID(), n.IP(), n.addedAt.String())
 	go loggy.Log(s, loggy.PeerTableLog, loggy.Inbound)
 
 	if tab.nodeAddedHook != nil {
@@ -598,7 +598,7 @@ func (tab *Table) addVerifiedNode(n *node) {
 	b.replacements = deleteNode(b.replacements, n)
 	n.addedAt = time.Now()
 
-	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"timestamp_logged\": \"%s\"}", "Verified Node Added", n.ID(), n.addedAt.String())
+	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"IP\": \"%s\", \"timestamp_logged\": \"%s\"}", "Verified Node Added", n.ID(), n.IP(),n.addedAt.String())
 	go loggy.Log(s, loggy.PeerTableLog, loggy.Inbound)
 
 	if tab.nodeAddedHook != nil {
@@ -678,7 +678,7 @@ func (tab *Table) replace(b *bucket, last *node) *node {
 	b.replacements = deleteNode(b.replacements, r)
 	b.entries[len(b.entries)-1] = r
 
-	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"timestamp_logged\": \"%s\"}", "Node Added (replacement)", r.ID(), time.Now().String())
+	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"IP\": \"%s\", \"timestamp_logged\": \"%s\"}", "Node Added (replacement)", r.ID(), r.IP(), time.Now().String())
 	go loggy.Log(s, loggy.PeerTableLog, loggy.Inbound)
 
 	tab.removeIP(b, last.IP())
@@ -717,7 +717,7 @@ func (tab *Table) deleteInBucket(b *bucket, n *node) {
 	b.entries = deleteNode(b.entries, n)
 	tab.removeIP(b, n.IP())
 
-	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"timestamp_logged\": \"%s\"}", "Node Deleted", n.ID(), time.Now().String())
+	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"IP\": \"%s\", \"timestamp_logged\": \"%s\"}", "Node Deleted", n.ID(), n.IP() , time.Now().String())
 	go loggy.Log(s, loggy.PeerTableLog, loggy.Inbound)
 
 	if tab.nodeRemovedHook != nil {
