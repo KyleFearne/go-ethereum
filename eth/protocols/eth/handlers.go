@@ -75,7 +75,6 @@ func handleGetBlockHeaders(backend Backend, msg Decoder, peer *Peer) error {
 		return fmt.Errorf("%w: message %v: %v", errDecode, msg, err)
 	}
 
-	//peerjson, _ := json.Marshal(peer.Info())
 	tmpjson, err := json.Marshal(query)
 
 	if err == nil {
@@ -259,7 +258,7 @@ func handleGetBlockBodies(backend Backend, msg Decoder, peer *Peer) error {
 	}
 
 	tmpjson, err := json.Marshal(query)
-	//peerjson, _ := json.Marshal(peer.Info())
+
 	if err == nil {
 		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", tmpjson, msg.Time(), time.Now().String())
 		go loggy.Log(s, loggy.GetBlockBodiesMsg, loggy.Inbound)
@@ -298,7 +297,7 @@ func handleGetReceipts(backend Backend, msg Decoder, peer *Peer) error {
 	}
 
 	tmpjson, err := json.Marshal(query)
-	//peerjson, _ := json.Marshal(peer.Info())
+
 	if err == nil {
 		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", tmpjson, msg.Time(), time.Now().String())
 		go loggy.Log(s, loggy.GetReceiptsMsg, loggy.Inbound)
@@ -355,7 +354,6 @@ func handleBlockHeaders(backend Backend, msg Decoder, peer *Peer) error {
 	}
 
 	tmpjson, err := json.Marshal(res)
-	//peerjson, _ := json.Marshal(peer.Info())
 
 	if err == nil {
 		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", tmpjson, msg.Time().String(), time.Now().String())
@@ -450,7 +448,7 @@ func handleReceipts(backend Backend, msg Decoder, peer *Peer) error {
 
 	jsonData, err := json.Marshal(output)
 
-	if err == nil{
+	if err == nil {
 		s := fmt.Sprintf(" { \"message\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", string(jsonData), msg.Time(), time.Now().String())
 		go loggy.Log(s, loggy.ReceiptsMsg, loggy.Inbound)
 	}
@@ -550,14 +548,11 @@ func handleTransactions(backend Backend, msg Decoder, peer *Peer) error {
 		slice = append(slice, tx.Hash())
 	}
 
-	//_, err := json.Marshal(txs)
-	//peerjson, _ := json.Marshal(peer.Info())
 	for _, hash := range slice {
 		transaction_slice = append(transaction_slice, Transaction{TxHash: hash})
 	}
 
 	jsonData, err := json.Marshal(transaction_slice)
-	print(string(jsonData))
 
 	if err == nil {
 		s := fmt.Sprintf(" { \"TxHashes\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", string(jsonData), msg.Time(), time.Now().String())
@@ -585,8 +580,7 @@ func handlePooledTransactions(backend Backend, msg Decoder, peer *Peer) error {
 		if tx == nil {
 			return fmt.Errorf("%w: transaction %d is nil", errDecode, i)
 		}
-		//Testing here
-		//print(tx.Hash())
+
 		peer.markTransaction(tx.Hash())
 		slice = append(slice, tx.Hash())
 	}
@@ -598,8 +592,6 @@ func handlePooledTransactions(backend Backend, msg Decoder, peer *Peer) error {
 	}
 
 	jsonData, err := json.Marshal(transaction_slice)
-
-	//_, err := json.Marshal(txs)
 
 	if err == nil {
 		s := fmt.Sprintf(" { \"Hashes\": %s, \"timestamp_received\": \"%s\", \"timestamp_logged\": \"%s\"}", string(jsonData), msg.Time(), time.Now().String())
