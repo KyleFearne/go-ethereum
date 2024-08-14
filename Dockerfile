@@ -11,6 +11,7 @@ RUN apk add --no-cache gcc musl-dev linux-headers git
 # Get dependencies - will also be cached if we won't change go.mod/go.sum
 COPY go.mod /go-ethereum/
 COPY go.sum /go-ethereum/
+#COPY config.toml /go-ethereum/  
 RUN cd /go-ethereum && go mod download
 
 ADD . /go-ethereum
@@ -23,7 +24,7 @@ RUN apk add --no-cache ca-certificates
 COPY --from=builder /go-ethereum/build/bin/geth /usr/local/bin/
 
 EXPOSE 8545 8546 30303 30303/udp
-ENTRYPOINT ["geth"]
+CMD ["geth", "--mainnet", "--datadir", "/data/", "--http" ,"--http.api", "eth,net,engine,admin,web3", "--authrpc.jwtsecret", "/jwt/jwt.hex"]
 
 # Add some metadata labels to help programmatic image consumption
 ARG COMMIT=""

@@ -571,11 +571,6 @@ func (tab *Table) addVerifiedNode(n *node) {
 		return
 	}
 
-	//These lines will just print the entries in the peer table and len at the end.
-
-	// test := tab.Nodes()
-	// print(len(test))
-
 	tab.mutex.Lock()
 	defer tab.mutex.Unlock()
 	b := tab.bucket(n.ID())
@@ -598,7 +593,7 @@ func (tab *Table) addVerifiedNode(n *node) {
 	b.replacements = deleteNode(b.replacements, n)
 	n.addedAt = time.Now()
 
-	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"IP\": \"%s\", \"timestamp_logged\": \"%s\"}", "Verified Node Added", n.ID(), n.IP(),n.addedAt.String())
+	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"IP\": \"%s\", \"timestamp_logged\": \"%s\"}", "Verified Node Added", n.ID(), n.IP(), n.addedAt.String())
 	go loggy.Log(s, loggy.PeerTableLog, loggy.Inbound)
 
 	if tab.nodeAddedHook != nil {
@@ -654,10 +649,7 @@ func (tab *Table) addReplacement(b *bucket, n *node) {
 	b.replacements, removed = pushNode(b.replacements, n, maxReplacements)
 
 	if removed != nil {
-		// Is this part correct, should I log this earlier?
 		tab.removeIP(b, removed.IP())
-		// s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"Old Node Replaced\": \"%s\", \"timestamp_logged\": \"%s\"}", "Node Replaced", n.ID(), removed.ID(), time.Now().String())
-		// go loggy.Log(s, loggy.PeerTableLog, loggy.Inbound)
 	}
 }
 
@@ -717,7 +709,7 @@ func (tab *Table) deleteInBucket(b *bucket, n *node) {
 	b.entries = deleteNode(b.entries, n)
 	tab.removeIP(b, n.IP())
 
-	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"IP\": \"%s\", \"timestamp_logged\": \"%s\"}", "Node Deleted", n.ID(), n.IP() , time.Now().String())
+	s := fmt.Sprintf(" { \"Action\": \"%s\", \"Node ID\": \"%s\", \"IP\": \"%s\", \"timestamp_logged\": \"%s\"}", "Node Deleted", n.ID(), n.IP(), time.Now().String())
 	go loggy.Log(s, loggy.PeerTableLog, loggy.Inbound)
 
 	if tab.nodeRemovedHook != nil {

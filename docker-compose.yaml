@@ -1,0 +1,15 @@
+services:
+
+  geth: 
+    build: ./
+    volumes:
+      - /data-ssd/kyleGeth/:/data
+      - /local/home/kfearne/ethereum/:/jwt
+      - /data-ssd/kyleLogs/ethereumlogs/:/log_path
+    #network_mode: host  
+    ports:
+      - "8545:8545"
+      - "8546:8546"
+      - "30303:30303"
+      - "30303:30303/udp"
+    restart: unless-stopped

@@ -230,8 +230,9 @@ func Log(jsonstr string, msgtype MessageType, msgdir MessageDirection) {
 	defer Loggymutex.Unlock()
 
 	EPOCH_DURATION = 14400
+
 	// Change BASEPATH accordingly
-	LOGS_BASEPATH = "/mnt/fscopy/home/ubuntu/ethereumlogs/"
+	LOGS_BASEPATH = "/log_path/"
 
 	fname := GET_LOG_FILE(msgtype, msgdir)
 
